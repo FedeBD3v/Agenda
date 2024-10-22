@@ -1,0 +1,4 @@
+# Archivos ignorados
+agenda.db
+*.db
+__pycache__

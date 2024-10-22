@@ -47,3 +47,8 @@ class Connect:
         """Recolectar todos los contactos de la base de datos"""
         self.cursor.execute("SELECT * FROM contactos")
         return self.cursor.fetchall()
+    
+    def informacion_contacto(self,contact_id):
+        """Recolecto toda la info de un solo contacto en la base de datos"""
+        self.cursor.execute("SELECT * FROM contactos WHERE id = ?", (contact_id,))
+        return self.cursor.fetchone() # Retorna una sola fila como tupla

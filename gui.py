@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Tk, Frame, ttk, Button,Entry, IntVar, StringVar, Toplevel, Label
+from tkinter import Tk, Frame, ttk, Button,Entry, IntVar, StringVar, Toplevel, Label, messagebox
 from event_handler import Consultation
 import re
 
@@ -52,6 +52,9 @@ class Gui:
         self.tree.column("Teléfono", width=100, anchor='center')
         self.tree.column("E-mail", width=150, anchor='center')
 
+        # Evento doble clic
+        self.tree.bind("<Double-1>",self.mostrar_detalles)
+
         # Scrollbar
         scrollbar = ttk.Scrollbar(self.frame_list,orient="vertical",command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -73,12 +76,57 @@ class Gui:
         btn_add.pack(side="left", padx=10, pady=5)  # Acomodar el botón
 
         self.cargar_contactos()
-   
+    
+    
+    def mostrar_detalles(self, event):
+        """Muestra la infarmación de los contactos y más opciones"""
+        selected_item = self.tree.selection()
+        if selected_item:
+            contact_id = selected_item[0]
+        
+        try:
+            id_numerico = int(contact_id[1:])
+            contact = self.consultation.detalle_contacto(id_numerico)
+            if id_numerico:
+                # Crear nueva ventana para mostrar detalles
+                detail_window = tk.Toplevel(self.root)
+                detail_window.title("Detalles del Contacto")
+
+                # Mostrar información del contacto con un diseño mejorado
+                Label(detail_window, text="ID:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+                Label(detail_window, text=str(contact[0])).grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+                Label(detail_window, text="Nombre:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+                Label(detail_window, text=str(contact[1])).grid(row=1, column=1, sticky='w', padx=5, pady=5)
+
+                Label(detail_window, text="Apellido:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+                Label(detail_window, text=str(contact[2])).grid(row=2, column=1, sticky='w', padx=5, pady=5)
+
+                Label(detail_window, text="Teléfono:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+                Label(detail_window, text=str(contact[3])).grid(row=3, column=1, sticky='w', padx=5, pady=5)
+
+                Label(detail_window, text="Email:").grid(row=4, column=0, sticky='w', padx=5, pady=5)
+                Label(detail_window, text=str(contact[4])).grid(row=4, column=1, sticky='w', padx=5, pady=5)
+
+                Button(detail_window, text="Cerrar", command=detail_window.destroy).grid(row=5, column=0, columnspan=2, pady=10)
+
+            else:
+                print("no funcionó")
+        except ValueError:
+            print("se rompió algo")
+        
+
+    def editar_contacto(self):
+        print("Editado")
+
+    def eliminar_contacto(self):
+        print("Elimido")
+
     def agregar_nuevo(self):
     # Constante
         NEW_HEIGHT = 200
         NEW_WIDTH = 300
-    
+
     # Variables
         self.id_var = IntVar()
         self.nombre_var = StringVar()

@@ -38,3 +38,8 @@ class Consultation:
     def obtener_contactos(self):
         """Obtener los contactos de la base de datos."""
         return self.db.contactos_obtenidos()
+    
+    def detalle_contacto(self, contact_id):
+        """Obtener la información de un contacto selecciónado"""
+        print(contact_id)
+        return self.db.informacion_contacto(contact_id)

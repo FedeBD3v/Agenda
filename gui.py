@@ -1,41 +1,41 @@
 import tkinter as tk
-from tkinter import Tk, Frame, ttk, Button,Entry, IntVar, StringVar, Toplevel, Label, messagebox
+from tkinter import Tk, Frame, ttk, Toplevel, Label, Button, Entry, IntVar, StringVar
+from PIL import Image, ImageTk
 from event_handler import Consultation
-import re
 
 class Gui:
     def __init__(self, root):
-
         # Constantes
-        WIDTH = 1500
-        HEIGHT = 850
-       
+        self.WIDTH = 1500
+        self.HEIGHT = 850
 
         self.root = root
         self.root.title("Agenda")
-        self.root.geometry(f"{WIDTH}x{HEIGHT}") # Establecer dimensiones de la ventana
+        self.root.geometry(f"{self.WIDTH}x{self.HEIGHT}")
         self.root.resizable(False, False)
-        
-
+      
+        # Inicializa el diccionario para almacenar imágenes
+        self.image_tk = {}
 
         # Instanciar la clase Consultation para gestionar contactos
         self.consultation = Consultation()
 
+        # Crear elementos de la interfaz
+        self.setup_treeview()
+        self.setup_buttons()
+        self.cargar_contactos()
+
+    def setup_treeview(self):
         # Frame - list
         self.frame_list = Frame(self.root)
-        self.frame_list.pack(fill='both', expand=True)  # Agregar espacio alrededor
+        self.frame_list.pack(fill='both', expand=True)
 
+        # Configurar estilo del Treeview
         self.style = ttk.Style()
-        self.style.configure(
-            "Treeview",
-            background = "#34495E",
-            foreground="white",
-            rowheight=25,
-            fieldbackground="#34495E"
-        )
-        self.style.map("Treeview",
-                       background=[('selected', '#1ABC9C')],
-                       foreground=[('selected', 'black')])
+        self.style.configure("Treeview", background="#34495E", foreground="white", rowheight=25, fieldbackground="#34495E")
+        self.style.map("Treeview", background=[('selected', '#1ABC9C')], foreground=[('selected', 'black')])
+
+        
 
         # Crear el Treeview
         self.tree = ttk.Treeview(self.frame_list, columns=("ID", "Nombre", "Apellido", "Teléfono", "E-mail"), show="headings")
@@ -46,151 +46,209 @@ class Gui:
         self.tree.heading("E-mail", text="E-mail")
 
         # Establecer el ancho de las columnas
-        self.tree.column("ID", width=50, anchor='center')
-        self.tree.column("Nombre", width=150, anchor='center')
-        self.tree.column("Apellido", width=150, anchor='center')
-        self.tree.column("Teléfono", width=100, anchor='center')
-        self.tree.column("E-mail", width=150, anchor='center')
+        for col, width in zip(["ID", "Nombre", "Apellido", "Teléfono", "E-mail"], [5, 200, 200, 200, 200]):
+            self.tree.column(col, width=width, anchor='center')
 
         # Evento doble clic
-        self.tree.bind("<Double-1>",self.mostrar_detalles)
+        self.tree.bind("<Double-1>", self.mostrar_detalles)
 
         # Scrollbar
-        scrollbar = ttk.Scrollbar(self.frame_list,orient="vertical",command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(self.frame_list, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
 
-        # Ubicar Scrollbar
-        self.tree.pack(side="left",fill="both",expand=True)
-        scrollbar.pack(side="right",fill="y")
+        # Ubicar Scrollbar y Treeview
+        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
-        self.tree.pack(fill='both', expand=True)  # Expandir el Treeview
-        
-        
-
+    def setup_buttons(self):
         # Frame para los botones
         self.frame_buttons = Frame(self.root, bg="lightgrey")
         self.frame_buttons.pack(fill='x', padx=10, pady=5)
 
         # Botones
         btn_add = ttk.Button(self.frame_buttons, text="Agregar", command=self.agregar_nuevo)
-        btn_add.pack(side="left", padx=10, pady=5)  # Acomodar el botón
+        btn_add.pack(side="left", padx=10, pady=5)
+    
 
-        self.cargar_contactos()
-    
-    
     def mostrar_detalles(self, event):
-        """Muestra la infarmación de los contactos y más opciones"""
+        # Muestro los detalles desde el treeview
         selected_item = self.tree.selection()
-        if selected_item:
-            contact_id = selected_item[0]
+        if not selected_item:
+            print("No hay ningún contacto seleccionado.")
+            return
+
+        contact_id = int(selected_item[0])
+        if contact_id:
+            try:
+                contact = self.consultation.detalle_contacto(contact_id)
+                self.show_contact_details(contact)
+                
+                
+            except ValueError as e:
+                print(f"{e}")
+
+    def show_contact_details(self, contact):
+        # Crear nueva ventana para mostrar detalles
+        detail_window = Toplevel(self.root)
+        detail_window.title("Detalles del Contacto")
+        # Mostrar información del contacto
+        labels = ["ID:", "Nombre:", "Apellido:", "Teléfono:", "Email:"]
+        for i, (text, value) in enumerate(zip(labels, contact)):
+            Label(detail_window, text=text).grid(row=i, column=0, sticky='w', padx=5, pady=5)
+            Label(detail_window, text=value).grid(row=i, column=1, sticky='w', padx=5, pady=5)
+
+        # Botones en ventana de detalles
+        Button(detail_window, text="Aceptar", command=detail_window.destroy).grid(row=0, column=2, pady=5)
+        Button(detail_window, text="Editar", command=lambda: self.editar_contacto(contact)).grid(row=1, column=2, pady=5)
+        Button(detail_window, text="Eliminar", command=self.eliminar_contacto).grid(row=2, column=2, pady=5)
+
+        # Cargar y mostrar la imagen
+        self.whatsapp_ico(detail_window)
+        self.email_ico(detail_window)
         
+
+    def whatsapp_ico(self, parent):
+        self.load_icon("whatsapp.ico", parent, 3, 2)
+
+    def email_ico(self, parent):
+        self.load_icon("email.ico", parent, 4, 2)
+
+    def load_icon(self, image_name, parent, row, column):
         try:
-            id_numerico = int(contact_id[1:])
-            contact = self.consultation.detalle_contacto(id_numerico)
-            if id_numerico:
-                # Crear nueva ventana para mostrar detalles
-                detail_window = tk.Toplevel(self.root)
-                detail_window.title("Detalles del Contacto")
-
-                # Mostrar información del contacto con un diseño mejorado
-                Label(detail_window, text="ID:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
-                Label(detail_window, text=str(contact[0])).grid(row=0, column=1, sticky='w', padx=5, pady=5)
-
-                Label(detail_window, text="Nombre:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
-                Label(detail_window, text=str(contact[1])).grid(row=1, column=1, sticky='w', padx=5, pady=5)
-
-                Label(detail_window, text="Apellido:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
-                Label(detail_window, text=str(contact[2])).grid(row=2, column=1, sticky='w', padx=5, pady=5)
-
-                Label(detail_window, text="Teléfono:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
-                Label(detail_window, text=str(contact[3])).grid(row=3, column=1, sticky='w', padx=5, pady=5)
-
-                Label(detail_window, text="Email:").grid(row=4, column=0, sticky='w', padx=5, pady=5)
-                Label(detail_window, text=str(contact[4])).grid(row=4, column=1, sticky='w', padx=5, pady=5)
-
-                Button(detail_window, text="Cerrar", command=detail_window.destroy).grid(row=5, column=0, columnspan=2, pady=10)
-
-            else:
-                print("no funcionó")
-        except ValueError:
-            print("se rompió algo")
+            image = Image.open(image_name).resize((30, 30))
+            photo = ImageTk.PhotoImage(image)
+            self.image_tk[image_name] = photo  # Guardar la referencia de la imagen
+            Button(parent, borderwidth=0, image=photo).grid(row=row, column=column)
+        except Exception as e:
+            print(f"Error al cargar la imagen {image_name}: {e}")
         
-
-    def editar_contacto(self):
-        print("Editado")
 
     def eliminar_contacto(self):
-        print("Elimido")
+        selected_item = self.tree.selection()
+        if not selected_item:
+            print("No hay ningún contacto seleccionado.")
+            return
 
-    def agregar_nuevo(self):
-    # Constante
-        NEW_HEIGHT = 200
-        NEW_WIDTH = 300
+        contact_id = int(selected_item[0])
+        if contact_id:
+            try:
+                self.consultation.borrar(contact_id)
+                self.cargar_contactos()
+                self.close_top_level_windows()
+            except Exception as e:
+                print(e)
 
-    # Variables
+    def close_top_level_windows(self):
+        for widget in self.root.winfo_children():
+            if isinstance(widget, Toplevel):
+                widget.destroy()
+
+    def editar_contacto(self, contact):
+        NEW_HEIGHT, NEW_WIDTH = 230, 300
+    
+        # Variables
         self.id_var = IntVar()
         self.nombre_var = StringVar()
         self.apellido_var = StringVar()
         self.telefono_var = StringVar()
         self.email_var = StringVar()
 
-        new_window = Toplevel(self.root, bg="#34495E")  # Nueva ventana hija
+        if contact:
+            edit_window = Toplevel(self.root, bg="#34495E")
+            edit_window.title("Editar contacto")
+            edit_window.geometry(f"{NEW_WIDTH}x{NEW_HEIGHT}")
+            edit_window.resizable(False, False)
+
+            # Asignar los valores obtenidos a las variables
+            self.id_var.set(contact[0])
+            self.nombre_var.set(contact[1])  
+            self.apellido_var.set(contact[2])  
+            self.telefono_var.set(contact[3])  
+            self.email_var.set(contact[4])  
+
+            # Definición de campos y creación
+            campos = [
+                ("ID", self.id_var),
+                ("Nombre", self.nombre_var),
+                ("Apellido", self.apellido_var),
+                ("Teléfono", self.telefono_var),
+                ("E-mail", self.email_var),
+            ]
+
+            # Crear los Entry fields
+            for i, (texto, variable) in enumerate(campos):
+                Label(edit_window, bg="#34495E", text=f"{texto}:").grid(row=i, column=0, padx=10, pady=5)
+                Entry(edit_window, textvariable=variable, state='readonly' if texto == "ID" else 'normal').grid(row=i, column=1, padx=10, pady=5)
+        
+            # Botón actualizar
+            Button(edit_window, text="Actualizar", command=lambda: self.actualizar_contactos(contact[0])).grid(row=len(campos), columnspan=2, pady=10)
+
+    def actualizar_contactos(self, contact_id):
+        campos_actualizados = {
+            'ID': self.id_var.get(),
+            'nombre': self.nombre_var.get().strip().capitalize(),
+            'apellido': self.apellido_var.get().strip().capitalize(),
+            'telefono': str(self.telefono_var.get()).strip(),
+            'email': self.email_var.get().strip()
+        }
+        
+        resultado = self.consultation.validar_datos(campos_actualizados)
+        if resultado:
+        # Aquí podrías llamar a un método en tu clase Consultation para actualizar el contacto
+            self.consultation.editar(campos_actualizados)  # Asegúrate de tener un método de edición en tu clase Consultation
+            print("Contacto actualizado con éxito.")
+            self.close_top_level_windows()
+            self.cargar_contactos()  # Recargar los contactos para reflejar el cambio
+
+    def agregar_nuevo(self):
+        # Constantes de la ventana
+        NEW_HEIGHT, NEW_WIDTH = 200, 300
+
+        # Variables
+        self.id_var = IntVar()
+        self.nombre_var = StringVar()
+        self.apellido_var = StringVar()
+        self.telefono_var = StringVar()
+        self.email_var = StringVar()
+
+        new_window = Toplevel(self.root, bg="#34495E")
         new_window.title("Agregar nuevo contacto")
-        new_window.geometry(F"{NEW_WIDTH}x{NEW_HEIGHT}")
-        new_window.resizable(False,False)
+        new_window.geometry(f"{NEW_WIDTH}x{NEW_HEIGHT}")
+        new_window.resizable(False, False)
 
-        # Definición de campos y creación con un bucle
-        campos = [("Nombre", self.nombre_var), 
-              ("Apellido", self.apellido_var), 
-              ("Teléfono", self.telefono_var), 
-              ("E-mail", self.email_var)]
-
+        # Definición de campos y creación
+        campos = [("Nombre", self.nombre_var), ("Apellido", self.apellido_var), ("Teléfono", self.telefono_var), ("E-mail", self.email_var)]
         for i, (texto, variable) in enumerate(campos):
-            Label(new_window,bg="#34495E", text=f"{texto}:").grid(row=i, column=0, padx=10, pady=5)
+            Label(new_window, bg="#34495E", text=f"{texto}:").grid(row=i, column=0, padx=10, pady=5)
             Entry(new_window, textvariable=variable).grid(row=i, column=1, padx=10, pady=5)
 
-
         # Botón Guardar
-        Button(new_window, 
-                   text="Guardar", 
-                   command=self.guardar_contacto,
-                   ).grid(
-            row=4, column=0, columnspan=2, pady=10
-        )
+        Button(new_window, text="Guardar", command=self.guardar_contacto).grid(row=4, column=0, columnspan=2, pady=10)
 
     def guardar_contacto(self):
-        nombre = self.nombre_var.get().strip().capitalize()
-        apellido = self.apellido_var.get().strip().capitalize()
-        telefono = self.telefono_var.get().strip().capitalize()
-        email = self.email_var.get().strip().capitalize()
-
         datos = {
-            "Nombre": nombre,
-            "Apellido": apellido,
-            "Telefono": telefono,
-            "Email": email
+            "Nombre": self.nombre_var.get().strip().capitalize(),
+            "Apellido": self.apellido_var.get().strip().capitalize(),
+            "Telefono": self.telefono_var.get().strip().capitalize(),
+            "Email": self.email_var.get().strip().capitalize(),
         }
-        self.consultation.guardar(datos)
-
-        for widget in self.root.winfo_children():
-            if isinstance(widget, Toplevel):
-                self.cargar_contactos()
-                widget.destroy()
-
+        if self.consultation.validar_datos(datos):
+            id_db = self.consultation.guardar(datos)
+            if id_db:
+                self.tree.insert("", tk.END, iid=id_db)
+            self.cargar_contactos()
+            self.close_top_level_windows()
 
     def cargar_contactos(self):
-        # Recorromos los datos del treeview y los limpiamos
+        # Limpiar el Treeview
         for dato in self.tree.get_children():
             self.tree.delete(dato)
-        
-        # Obtener los contactos desde la base de datos a través del event_handler
-        contactos = self.consultation.obtener_contactos()
 
-        # Insertamos nuevamente los contactos al treeview
-        for contacto in contactos:
-            self.tree.insert("",tk.END, values=contacto)
-        
-        
+        # Obtener los contactos desde la base de datos y insertarlos
+        contactos = self.consultation.obtener_contactos()
+        for contacto in sorted(contactos, key=lambda x: x[0]):
+            self.tree.insert("", tk.END, iid=contacto[0], values=contacto)
+
 if __name__ == "__main__":
     root = Tk()
     gui = Gui(root)

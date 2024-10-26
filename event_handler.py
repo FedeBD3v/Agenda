@@ -1,5 +1,5 @@
-from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, StringVar, IntVar
+import re
 from db_manager import Connect  # Importamos la clase Connect
 
 class Consultation:
@@ -16,30 +16,64 @@ class Consultation:
         self.apellido = StringVar()
         self.telefono = StringVar()
         self.email = StringVar()
-        self.connect = Connect()
 
     def guardar(self, datos):
-        print(datos)
-        print(type(datos))
-        if self.validar_datos(datos):
-            self.connect.insertar(datos)
-        else:
-            print("Datos incorretos")
+        """Guarda un nuevo contacto en la base de datos."""
+        try:
+            id_db = self.db.insertar(datos)
+            messagebox.showinfo(self.GUARDADO_MSG, "El contacto ha sido guardado correctamente.")
+            return id_db
+        except Exception as e:
+            messagebox.showerror(self.ERROR_MSG, f"Ha ocurrido un error inesperado: {e}")
 
-    def validar_datos(self,datos):
-        if not datos["Nombre"] or not datos["Apellido"] or not datos["Telefono"] or not datos["Email"]:
+    def validar_datos(self, datos):
+        """Valida los datos del contacto ingresados."""
+        # Elimina espacios en blanco al inicio y al final de cada campo
+        #datos = {k: v.strip() for k, v in datos.items()}
+
+        # 1. Verificar que no haya campos vacíos
+        if not datos['nombre'] and datos['apellido'] and datos['telefono'] and datos['email']:
+            messagebox.showerror(self.ERROR_MSG, "Debes completar todos los datos pedidos.")
             return False
-        if not datos["Telefono"].isdigit():
+
+        # 2. Validación del teléfono (entre 8-15 dígitos, opcionalmente con '+')
+        if not re.match(r"^\+?\d{8,15}$", datos["telefono"]):
+            messagebox.showerror(self.ERROR_MSG, "El teléfono debe ser numérico y tener entre 8 y 15 dígitos.")
             return False
-        if "@" not in datos["Email"] or "." not in datos["Email"]:
+
+        # 3. Validación del correo electrónico usando una expresión regular
+        email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(email_pattern, datos["email"]):
+            messagebox.showerror(self.ERROR_MSG, "El correo no tiene el formato adecuado.")
             return False
+
         return True
 
     def obtener_contactos(self):
-        """Obtener los contactos de la base de datos."""
+        """Obtiene los contactos de la base de datos."""
         return self.db.contactos_obtenidos()
     
     def detalle_contacto(self, contact_id):
-        """Obtener la información de un contacto selecciónado"""
-        print(contact_id)
+        """Obtiene la información de un contacto seleccionado."""
         return self.db.informacion_contacto(contact_id)
+    
+    def borrar(self, contact_id):
+        """Borra un contacto de la base de datos."""
+        respuesta = messagebox.askquestion(self.BORRADO_MSG, "¿Desea borrar el contacto?")  #
+        if respuesta == 'yes':  
+            try:
+                self.db.eliminar(contact_id)
+                messagebox.showinfo(self.BORRADO_MSG, "El contacto ha sido borrado exitosamente.")
+            except Exception as e:
+                messagebox.showerror(self.ERROR_MSG, f"Ha ocurrido un error: {e}")
+        else:
+            print("Acción de borrado cancelada.")
+
+    def editar(self, datos):
+        """Modifica el contacto en la base de datos."""
+        if datos:
+            try:
+                self.db.actualizar(datos)
+                messagebox.showinfo(self.ACTUALIZADO_MSG, "Los datos se han actualizado correctamente.")
+            except Exception as e:
+                messagebox.showerror(self.ERROR_MSG, f"Ha ocurrido un error: {e}")

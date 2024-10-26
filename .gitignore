@@ -1,4 +1,6 @@
 # Archivos ignorados
 agenda.db
 *.db
+v2.py
+*.txt
 __pycache__

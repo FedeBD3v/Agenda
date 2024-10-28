@@ -81,14 +81,11 @@ class Connect:
         """Actualizamos contacto"""
         if datos:
             try:
-                print(datos)  # Verifica qué valores estás recibiendo
-            
-                # Asegúrate de que datos contenga los 4 valores necesarios: id, nombre, telefono, email
                 self.cursor.execute("""
                 UPDATE contactos
                 SET nombre = ?, apellido = ? , telefono = ?, email = ?
                 WHERE id = ?;
-                """, (datos['nombre'],datos['apellido'], datos['telefono'], datos['email'], datos['ID']))  # Aquí pasamos los parámetros correctamente
+                """, (datos['nombre'],datos['apellido'], datos['telefono'], datos['email'], datos['ID'])) 
             
                 self.conn.commit()
             except Exception as e:

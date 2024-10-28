@@ -1,6 +1,8 @@
 import tkinter as tk
+import os
 from tkinter import Tk, Frame, ttk, Toplevel, Label, Button, Entry, IntVar, StringVar
 from PIL import Image, ImageTk
+from whatsapp_icon import WhatsappIcon
 from event_handler import Consultation
 
 class Gui:
@@ -16,6 +18,14 @@ class Gui:
       
         # Inicializa el diccionario para almacenar imágenes
         self.image_tk = {}
+
+        # Obtener la ruta de la imagen
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(current_dir, "whatsapp.png")
+
+        # Crear el icono de WhatsApp
+        whatsapp_icon = WhatsappIcon(image_path)  # Instancia la clase
+        self.whatsapp_icon = whatsapp_icon.get_icon()  # Obtiene el icono
 
         # Instanciar la clase Consultation para gestionar contactos
         self.consultation = Consultation()
@@ -125,25 +135,7 @@ class Gui:
         Button(detail_window, text="Editar", command=lambda: self.editar_contacto(contact)).grid(row=1, column=2, pady=5)
         Button(detail_window, text="Eliminar", command=self.eliminar_contacto).grid(row=2, column=2, pady=5)
 
-        # Cargar y mostrar la imagen
-        self.whatsapp_ico(detail_window)
-        self.email_ico(detail_window)
-        
-
-    def whatsapp_ico(self, parent):
-        self.load_icon("whatsapp.ico", parent, 3, 2)
-
-    def email_ico(self, parent):
-        self.load_icon("email.ico", parent, 4, 2)
-
-    def load_icon(self, image_name, parent, row, column):
-        try:
-            image = Image.open(image_name).resize((30, 30))
-            photo = ImageTk.PhotoImage(image)
-            self.image_tk[image_name] = photo  # Guardar la referencia de la imagen
-            Button(parent, borderwidth=0, image=photo).grid(row=row, column=column)
-        except Exception as e:
-            print(f"Error al cargar la imagen {image_name}: {e}")
+        Button(detail_window, text="Whatsapp",image=self.whatsapp_icon, command=lambda: self.consultation.whatsapp_msj(contact[3])).grid(row=3,column=2)
         
 
     def eliminar_contacto(self):

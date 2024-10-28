@@ -1,5 +1,6 @@
 from tkinter import messagebox, StringVar, IntVar
 import re
+import webbrowser
 from db_manager import Connect  # Importamos la clase Connect
 
 class Consultation:
@@ -77,3 +78,8 @@ class Consultation:
                 messagebox.showinfo(self.ACTUALIZADO_MSG, "Los datos se han actualizado correctamente.")
             except Exception as e:
                 messagebox.showerror(self.ERROR_MSG, f"Ha ocurrido un error: {e}")
+
+    def whatsapp_msj(self,contact):
+        print(contact)
+        url = f"https://wa.me/{contact}"
+        webbrowser.open(url)

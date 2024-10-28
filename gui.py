@@ -23,6 +23,7 @@ class Gui:
         # Crear elementos de la interfaz
         self.setup_treeview()
         self.setup_buttons()
+        self.serch_contact()
         self.cargar_contactos()
 
     def setup_treeview(self):
@@ -69,6 +70,28 @@ class Gui:
         btn_add = ttk.Button(self.frame_buttons, text="Agregar", command=self.agregar_nuevo)
         btn_add.pack(side="left", padx=10, pady=5)
     
+    def serch_contact(self):
+        """Buscador en tiempo real"""
+        etr_serch = ttk.Entry(self.frame_buttons)
+        etr_serch.pack(side="right", padx=10, pady=5)
+        etr_serch.bind("<KeyRelease>", self.filter) 
+
+
+    def filter(self, event):
+        """Evento para filtrar contactos"""
+        query = event.widget.get().lower()  # Obtengo el texto del Entry
+        print(f"Texto ingresado: {query}")
+
+        # Limpio el Treeview antes de aplicar el filtro
+        self.tree.delete(*self.tree.get_children())  # Limpia todos los elementos
+
+        # Obtengo todos los contactos nuevamente
+        contactos = self.consultation.obtener_contactos()
+    
+        # Filtro y Vuelvo a agregar los elementos que coinciden
+        for contacto in sorted(contactos, key=lambda x: x[0]):
+            if any(query in str(value).lower() for value in contacto):
+                self.tree.insert("", tk.END, iid=contacto[0], values=contacto)
 
     def mostrar_detalles(self, event):
         # Muestro los detalles desde el treeview

@@ -3,4 +3,5 @@ agenda.db
 *.db
 v2.py
 *.txt
+app.py
 __pycache__

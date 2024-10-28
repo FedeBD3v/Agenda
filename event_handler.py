@@ -29,22 +29,19 @@ class Consultation:
 
     def validar_datos(self, datos):
         """Valida los datos del contacto ingresados."""
-        # Elimina espacios en blanco al inicio y al final de cada campo
-        #datos = {k: v.strip() for k, v in datos.items()}
-
         # 1. Verificar que no haya campos vacíos
-        if not datos['nombre'] and datos['apellido'] and datos['telefono'] and datos['email']:
+        if not datos['Nombre'] and datos['Apellido'] and datos['Telefono'] and datos['Email']:
             messagebox.showerror(self.ERROR_MSG, "Debes completar todos los datos pedidos.")
             return False
 
         # 2. Validación del teléfono (entre 8-15 dígitos, opcionalmente con '+')
-        if not re.match(r"^\+?\d{8,15}$", datos["telefono"]):
+        if not re.match(r"^\+?\d{8,15}$", datos["Telefono"]):
             messagebox.showerror(self.ERROR_MSG, "El teléfono debe ser numérico y tener entre 8 y 15 dígitos.")
             return False
 
         # 3. Validación del correo electrónico usando una expresión regular
         email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if not re.match(email_pattern, datos["email"]):
+        if not re.match(email_pattern, datos["Email"]):
             messagebox.showerror(self.ERROR_MSG, "El correo no tiene el formato adecuado.")
             return False
 
@@ -82,4 +79,9 @@ class Consultation:
     def whatsapp_msj(self,contact):
         print(contact)
         url = f"https://wa.me/{contact}"
+        webbrowser.open(url)
+
+    def gmail_msj(self,contact):
+        print(contact)
+        url = f"https://mail.google.com/mail/?view=cm&fs=1&to={contact}"
         webbrowser.open(url)

@@ -1,5 +1,5 @@
 import sqlite3
-from cryptography.fernet import Fernet # Para encriptar la base de datos
+from cryptography.fernet import Fernet # Para encriptar la base de datos en el futuro
 
 class Connect:
     def __init__(self, db_name="agenda.db"):
